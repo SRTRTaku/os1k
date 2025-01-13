@@ -37,6 +37,8 @@ void kernel_main(void) {
 
     printf("\n\nHello World!\n");
     printf("1 + 2 = %d, %x\n", 1 + 2, 0x1234abcd);
+    PANIC("booted! %x", 255);
+    printf("unreachable here!\n");
 
 
     for(;;) {
