@@ -48,6 +48,7 @@ struct trap_frame {
 
 #define PROC_UNUSED     0 // 未使用のプロセス管理構造体
 #define PROC_RUNNABLE   1 // 実行可能なプロセス
+#define PROC_EXITED     2 // 終了済みのプロセス
 
 struct process {
     int pid;             // プロセスID
