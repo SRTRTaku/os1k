@@ -7,6 +7,8 @@ struct sbiret {
     long value;
 };
 
+#define SCAUSE_ECALL 8
+
 struct trap_frame {
     uint32_t ra;
     uint32_t gp;

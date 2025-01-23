@@ -11,6 +11,8 @@ struct process procs[PROCS_MAX];
 struct process *current_proc; // 現在実行中のプロセス
 struct process *idle_proc; // アイドルプロセス
 
+void yield(void);
+
 //
 // SBI call
 //
@@ -44,6 +46,35 @@ void putchar(char ch) {
     sbi_call(ch, 0, 0, 0, 0, 0, 0, 1 /* Console Putchar */);
 }
 
+long getchar(void) {
+    struct sbiret ret = sbi_call(0, 0, 0, 0, 0, 0, 0, 2);
+    return ret.error;
+}
+
+//
+// system call
+//
+void handle_syscall(struct trap_frame *f) {
+    switch (f->a3) {
+        case SYS_PUTCHAR:
+            putchar(f->a0);
+            break;
+        case SYS_GETCHAR:
+            while (1) {
+                long ch = getchar();
+                if (ch >= 0) {
+                    f->a0 = ch;
+                    break;
+                }
+
+                yield();
+            }
+            break;
+        default:
+            PANIC("unexpected syscall a3=%x\n", f->a3);
+    }
+}
+
 //
 // trap
 //
@@ -52,10 +83,17 @@ void handle_trap(struct trap_frame *f) {
     uint32_t stval = READ_CSR(stval);
     uint32_t user_pc = READ_CSR(sepc);
 
-    PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n",
-            scause,
-            stval,
-            user_pc);
+    if (scause == SCAUSE_ECALL) {
+        handle_syscall(f);
+        user_pc += 4;
+    } else {
+        PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n",
+                scause,
+                stval,
+                user_pc);
+    }
+
+    WRITE_CSR(sepc, user_pc);
 }
 __attribute__((naked))
 __attribute__((aligned(4)))
